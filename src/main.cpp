@@ -90,9 +90,9 @@ sensor_msgs::Range range_msg[4];
 geometry_msgs::PoseStamped pose;
 std_msgs::UInt8 button_msg;
 std_msgs::Float32 pwm_msg1;
-// std_msgs::Float32 pwm_msg2;
-// std_msgs::Float32 pwm_msg3;
-// std_msgs::Float32 pwm_msg4;
+std_msgs::Float32 pwm_msg2;
+std_msgs::Float32 pwm_msg3;
+std_msgs::Float32 pwm_msg4;
 // rosbot_ekf::Imu imu_msg;
 sensor_msgs::Imu imu_msg;
 ros::NodeHandle nh;
@@ -104,9 +104,9 @@ ros::Publisher *pose_pub;
 ros::Publisher *button_pub;
 ros::Publisher *imu_pub;
 ros::Publisher *pwm_pub1;
-// ros::Publisher *pwm_pub2;
-// ros::Publisher *pwm_pub3;
-// ros::Publisher *pwm_pub4;
+ros::Publisher *pwm_pub2;
+ros::Publisher *pwm_pub3;
+ros::Publisher *pwm_pub4;
 geometry_msgs::TransformStamped robot_tf;
 tf::TransformBroadcaster broadcaster;
 
@@ -134,9 +134,9 @@ volatile bool button1_publish_flag = false;
 volatile bool button2_publish_flag = false;
 
 volatile bool pwm_publish_flag1 = true;
-// volatile bool pwm_publish_flag2 = true;
-// volatile bool pwm_publish_flag3 = true;
-// volatile bool pwm_publish_flag4 = true;
+volatile bool pwm_publish_flag2 = true;
+volatile bool pwm_publish_flag3 = true;
+volatile bool pwm_publish_flag4 = true;
 
 volatile bool is_speed_watchdog_enabled = true;
 volatile bool is_speed_watchdog_active = false;
@@ -203,24 +203,24 @@ static void initPwmPublisher1()
     nh.advertise(*pwm_pub1);
 }
 
-// static void initPwmPublisher2()
-// {
-//     pwm_pub2 = new ros::Publisher("pwm2", &pwm_msg2);
-//     nh.advertise(*pwm_pub2);
-// }
+static void initPwmPublisher2()
+{
+    pwm_pub2 = new ros::Publisher("pwm2", &pwm_msg2);
+    nh.advertise(*pwm_pub2);
+}
 
-// static void initPwmPublisher3()
-// {
+static void initPwmPublisher3()
+{
 
-//     pwm_pub3 = new ros::Publisher("pwm3", &pwm_msg3);
-//     nh.advertise(*pwm_pub3);
-// }
+    pwm_pub3 = new ros::Publisher("pwm3", &pwm_msg3);
+    nh.advertise(*pwm_pub3);
+}
 
-// static void initPwmPublisher4()
-// {
-//     pwm_pub4 = new ros::Publisher("pwm4", &pwm_msg4);
-//     nh.advertise(*pwm_pub4);
-// }
+static void initPwmPublisher4()
+{
+    pwm_pub4 = new ros::Publisher("pwm4", &pwm_msg4);
+    nh.advertise(*pwm_pub4);
+}
 
 static void initRangePublisher()
 {
@@ -1021,9 +1021,9 @@ int main()
     initImuPublisher();
     initButtonPublisher();
     initPwmPublisher1();
-    // initPwmPublisher2();
-    // initPwmPublisher3();
-    // initPwmPublisher4();
+    initPwmPublisher2();
+    initPwmPublisher3();
+    initPwmPublisher4();
 
 #if USE_WS2812B_ANIMATION_MANAGER
     anim_manager = AnimationManager::getInstance();
@@ -1103,35 +1103,35 @@ int main()
                 pwm_pub1->publish(&pwm_msg1);
         }
 
-        // if (pwm_publish_flag2)
-        // {   
-        //     // Get duty cycle 
-        //     // '(RosbotMotNum)1' corresponds to Motor1 
-        //     pwm_msg2.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)2, SpeedMode::DUTY_CYCLE);
+        if (pwm_publish_flag2)
+        {   
+            // Get duty cycle 
+            // '(RosbotMotNum)1' corresponds to Motor1 
+            pwm_msg2.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)2, SpeedMode::DUTY_CYCLE);
 
-        //     if (nh.connected())
-        //         pwm_pub2->publish(&pwm_msg2);
-        // }
+            if (nh.connected())
+                pwm_pub2->publish(&pwm_msg2);
+        }
 
-        // if (pwm_publish_flag3)
-        // {   
-        //     // Get duty cycle 
-        //     // '(RosbotMotNum)1' corresponds to Motor1 
-        //     pwm_msg3.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)3, SpeedMode::DUTY_CYCLE);
+        if (pwm_publish_flag3)
+        {   
+            // Get duty cycle 
+            // '(RosbotMotNum)1' corresponds to Motor1 
+            pwm_msg3.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)3, SpeedMode::DUTY_CYCLE);
 
-        //     if (nh.connected())
-        //         pwm_pub3->publish(&pwm_msg3);
-        // }
+            if (nh.connected())
+                pwm_pub3->publish(&pwm_msg3);
+        }
 
-        // if (pwm_publish_flag4)
-        // {   
-        //     // Get duty cycle 
-        //     // '(RosbotMotNum)1' corresponds to Motor1 
-        //     pwm_msg4.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)4, SpeedMode::DUTY_CYCLE);
+        if (pwm_publish_flag4)
+        {   
+            // Get duty cycle 
+            // '(RosbotMotNum)1' corresponds to Motor1 
+            pwm_msg4.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)4, SpeedMode::DUTY_CYCLE);
 
-        //     if (nh.connected())
-        //         pwm_pub4->publish(&pwm_msg4);
-        // }
+            if (nh.connected())
+                pwm_pub4->publish(&pwm_msg4);
+        }
 
         if (spin_count % 5 == 0) /// cmd_vel, odometry, joint_states, tf messages
         {
