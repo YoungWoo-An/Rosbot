@@ -1,0 +1,46 @@
+{
+    "macros": ["ROSSERIAL_VERSION=\"1.1.0\""],
+    "name": "rosserial-mbed",
+    "config": {
+        "tx_pin": {
+            "help": "Default library Serial TX pin.",
+            "macro_name": "ROSSERIAL_TX",
+            "value": "USBTX"
+        },
+        "rx_pin": {
+            "help": "Default library Serial RX pin.",
+            "macro_name": "ROSSERIAL_RX",
+            "value": "USBRX"
+        },
+        "baudrate": {
+            "help": "Default library Serial baudrate.",
+            "macro_name": "ROSSERIAL_BAUDRATE",
+            "value": "115200"
+        },
+        "in_buffer_size": {
+            "help": "Input buffer size.",
+            "macro_name": "ROSSERIAL_INPUT_BUFFER_SIZE",
+            "value": 512
+        },
+        "out_buffer_size": {
+            "help": "Output buffer size.",
+            "macro_name": "ROSSERIAL_OUTPUT_BUFFER_SIZE",
+            "value": 512
+        },
+        "rtos_kernel_ms_tick": {
+            "help": "Use Kernel::get_ms_count() insted Ticker API.",
+            "macro_name": "ROSSERIAL_RTOS_KERNEL_MS_TICK",
+            "value": 0
+        }
+    },
+    "target_overrides":
+    {
+        "CORE2":
+        {
+            "tx_pin": "RPI_SERIAL_TX",
+            "rx_pin": "RPI_SERIAL_RX",
+            "baudrate": 525000,
+            "rtos_kernel_ms_tick": 1
+        }
+    }
+}
