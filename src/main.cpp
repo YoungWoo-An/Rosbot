@@ -12,6 +12,8 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/UInt32.h>
+#include <std_msgs/Float32.h>
+// #include <std_msgs/Float32MultiArray.h>
 #include <sensor_msgs/Imu.h>
 // #include <rosbot_ekf/Imu.h>
 
@@ -83,22 +85,28 @@ ImuDriver *imu_driver_ptr;
 
 geometry_msgs::Twist current_vel;
 sensor_msgs::JointState joint_states;
-sensor_msgs::JointState pwm;
 sensor_msgs::BatteryState battery_state;
 sensor_msgs::Range range_msg[4];
 geometry_msgs::PoseStamped pose;
 std_msgs::UInt8 button_msg;
+std_msgs::Float32 pwm_msg1;
+std_msgs::Float32 pwm_msg2;
+std_msgs::Float32 pwm_msg3;
+std_msgs::Float32 pwm_msg4;
 // rosbot_ekf::Imu imu_msg;
 sensor_msgs::Imu imu_msg;
 ros::NodeHandle nh;
 ros::Publisher *vel_pub;
 ros::Publisher *joint_state_pub;
-ros::Publisher *pwm_pub;
 ros::Publisher *battery_pub;
 ros::Publisher *range_pub[4];
 ros::Publisher *pose_pub;
 ros::Publisher *button_pub;
 ros::Publisher *imu_pub;
+ros::Publisher *pwm_pub1;
+ros::Publisher *pwm_pub2;
+ros::Publisher *pwm_pub3;
+ros::Publisher *pwm_pub4;
 geometry_msgs::TransformStamped robot_tf;
 tf::TransformBroadcaster broadcaster;
 
@@ -112,9 +120,8 @@ rosbot_kinematics::MecanumDrive mecanum_drive_kinematics;
     rosbot_kinematics::RosbotKinematics *rk = &diff_drive_kinematics;
 #endif
 
-volatile bool distance_sensors_enabled = false;
+volatile bool distance_sensors_enabled = true;
 volatile bool joint_states_enabled = true;
-volatile bool pwm_flag = true;
 volatile bool tf_msgs_enabled = false;
 
 DigitalOut sens_power(SENS_POWER_ON, 0);
@@ -125,6 +132,11 @@ InterruptIn button1(BUTTON1);
 InterruptIn button2(BUTTON2);
 volatile bool button1_publish_flag = false;
 volatile bool button2_publish_flag = false;
+
+volatile bool pwm_publish_flag1 = true;
+volatile bool pwm_publish_flag2 = true;
+volatile bool pwm_publish_flag3 = true;
+volatile bool pwm_publish_flag4 = true;
 
 volatile bool is_speed_watchdog_enabled = true;
 volatile bool is_speed_watchdog_active = false;
@@ -151,11 +163,8 @@ double pos[] = {0, 0, 0, 0};
 double vel[] = {0, 0, 0, 0};
 double eff[] = {0, 0, 0, 0};
 
-// Pwm
-const char *pwm_name[] = {"front_left_wheel_hinge", "front_right_wheel_hinge", "rear_left_wheel_hinge", "rear_right_wheel_hinge"};
-double pos1[] = {0, 0, 0, 0};
-double vel1[] = {0, 0, 0, 0};
-double eff1[] = {0, 0, 0, 0};
+// PWM
+// float pwm = {0, 0, 0, 0};
 
 // Range
 const char *range_id[] = {"range_fr", "range_fl", "range_rr", "range_rl"};
@@ -186,6 +195,31 @@ static void initButtonPublisher()
 {
     button_pub = new ros::Publisher("buttons", &button_msg);
     nh.advertise(*button_pub);
+}
+
+static void initPwmPublisher1()
+{
+    pwm_pub1 = new ros::Publisher("pwm1", &pwm_msg1);
+    nh.advertise(*pwm_pub1);
+}
+
+static void initPwmPublisher2()
+{
+    pwm_pub2 = new ros::Publisher("pwm2", &pwm_msg2);
+    nh.advertise(*pwm_pub2);
+}
+
+static void initPwmPublisher3()
+{
+
+    pwm_pub3 = new ros::Publisher("pwm3", &pwm_msg3);
+    nh.advertise(*pwm_pub3);
+}
+
+static void initPwmPublisher4()
+{
+    pwm_pub4 = new ros::Publisher("pwm4", &pwm_msg4);
+    nh.advertise(*pwm_pub4);
 }
 
 static void initRangePublisher()
@@ -271,25 +305,6 @@ static void initJointStatePublisher()
     // joint_states.effort_length = 4;
 }
 
-static void initPwmStatePublisher()
-{
-    pwm_pub = new ros::Publisher("pwm", &pwm);
-    nh.advertise(*pwm_pub);
-
-    pwm.header.frame_id = "base_link";
-
-    //assigning the arrays to the message
-    pwm.name = (char **)pwm_name;
-    pwm.position = pos1;
-    // joint_states.velocity = vel;
-    // joint_states.effort = eff;
-
-    //setting the length
-    pwm.name_length = 4;
-    pwm.position_length = 4;
-    // joint_states.velocity_length = 4;
-    // joint_states.effort_length = 4;
-}
 
 static void velocityCallback(const geometry_msgs::Twist &twist_msg)
 {
@@ -1003,9 +1018,12 @@ int main()
     initVelocityPublisher();
     initRangePublisher();
     initJointStatePublisher();
-    initPwmStatePublisher();
     initImuPublisher();
     initButtonPublisher();
+    initPwmPublisher1();
+    initPwmPublisher2();
+    initPwmPublisher3();
+    initPwmPublisher4();
 
 #if USE_WS2812B_ANIMATION_MANAGER
     anim_manager = AnimationManager::getInstance();
@@ -1075,6 +1093,46 @@ int main()
             }
         }
 
+        if (pwm_publish_flag1)
+        {   
+            // Get duty cycle 
+            // '(RosbotMotNum)1' corresponds to Motor1 
+            pwm_msg1.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)1, SpeedMode::DUTY_CYCLE);
+
+            if (nh.connected())
+                pwm_pub1->publish(&pwm_msg1);
+        }
+
+        if (pwm_publish_flag2)
+        {   
+            // Get duty cycle 
+            // '(RosbotMotNum)1' corresponds to Motor1 
+            pwm_msg2.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)2, SpeedMode::DUTY_CYCLE);
+
+            if (nh.connected())
+                pwm_pub2->publish(&pwm_msg2);
+        }
+
+        if (pwm_publish_flag3)
+        {   
+            // Get duty cycle 
+            // '(RosbotMotNum)1' corresponds to Motor1 
+            pwm_msg3.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)3, SpeedMode::DUTY_CYCLE);
+
+            if (nh.connected())
+                pwm_pub3->publish(&pwm_msg3);
+        }
+
+        if (pwm_publish_flag4)
+        {   
+            // Get duty cycle 
+            // '(RosbotMotNum)1' corresponds to Motor1 
+            pwm_msg4.data = RosbotDrive::getInstance().getSpeed((RosbotMotNum)4, SpeedMode::DUTY_CYCLE);
+
+            if (nh.connected())
+                pwm_pub4->publish(&pwm_msg4);
+        }
+
         if (spin_count % 5 == 0) /// cmd_vel, odometry, joint_states, tf messages
         {
             current_vel.linear.x = sqrt(odometry.robot_x_vel * odometry.robot_x_vel + odometry.robot_y_vel * odometry.robot_y_vel);
@@ -1101,18 +1159,6 @@ int main()
                 joint_states.header.stamp = pose.header.stamp;
                 if (nh.connected())
                     joint_state_pub->publish(&joint_states);
-            }
-
-            if (pwm_flag)
-            {
-                pos[0] = RosbotDrive::getInstance().getSpeed((RosbotMotNum)1, SpeedMode::DUTY_CYCLE);
-                pos[1] = RosbotDrive::getInstance().getSpeed((RosbotMotNum)2, SpeedMode::DUTY_CYCLE);
-                pos[2] = RosbotDrive::getInstance().getSpeed((RosbotMotNum)3, SpeedMode::DUTY_CYCLE);
-                pos[3] = RosbotDrive::getInstance().getSpeed((RosbotMotNum)4, SpeedMode::DUTY_CYCLE);
-                pwm.position = pos1;
-                pwm.header.stamp = pose.header.stamp;
-                if (nh.connected())
-                    pwm_pub->publish(&pwm);
             }
 
             if (tf_msgs_enabled)
@@ -1169,6 +1215,7 @@ int main()
             }
             distance_sensor_mail_box.free(message);
         }
+        
         // }
         // if(spin_count % 20 == 0 && distance_sensors_enabled) // ~ 5 HZ
         // {
